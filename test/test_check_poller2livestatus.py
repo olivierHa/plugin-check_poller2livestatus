@@ -72,5 +72,19 @@ class TestPlugin(unittest.TestCase):
             matches = re.search(pattern_to_search, output)
             assert matches is not None
 
+    def test_connection(self):
+        """Test connection :
+        -B 127.0.0.1 -H myhost -p mypoller -v
+        """
+        sys.argv = [sys.argv[0]]
+        sys.argv.append('-B')
+        sys.argv.append('127.0.0.1')
+        sys.argv.append('-H')
+        sys.argv.append('myhost')
+        sys.argv.append('-p')
+        sys.argv.append('mypoller')
+        sys.argv.append('-v')
+        self.do_tst(2, "Error while connecting to livestatus")
+
 if __name__ == '__main__':
     unittest.main()
