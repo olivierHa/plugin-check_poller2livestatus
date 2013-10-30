@@ -1,0 +1,12 @@
+Source: check-poller2livestatus
+Maintainer: Thibault Cohen <thibault.cohen@savoirfairelinux.com>
+Section: misc
+Priority: optional
+Standards-Version: 114-6847372-1
+Build-Depends: debhelper (>= 7)
+Homepage: http://www.savoirfairelinux.com
+
+Package: check-poller2livestatus
+Architecture: any
+#Depends: python, python-dlnetsnmp
+Description: Shinken plugin from SFL. Check Shinken from poller to livestatus module
