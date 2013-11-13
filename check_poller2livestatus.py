@@ -124,7 +124,10 @@ def get_data(args):
 
     # Output function
     def exit(exit_code, message, perfdata=None):
-        message_prefix = "Shinken Poller2LiveStatus (Poller: %s): " % poller
+        if poller:
+            message_prefix = "Shinken Poller2LiveStatus (Poller: %s): " % poller
+        else:
+            message_prefix = "Shinken Poller2LiveStatus: "
         message = message_prefix + message
         if perfdata:
             message = " | ".join((message, perfdata))
