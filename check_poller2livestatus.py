@@ -38,6 +38,7 @@ import getopt
 import socket
 import sys
 import time
+import syslog
 
 
 PLUGIN_NAME = "check_poller2livestatus"
@@ -80,7 +81,7 @@ def print_usage():
     """
     usage_msg = """
 %s.py -B <broker_address> [-P <broker_port>] -H <hostname> [-S <servicename>]
-[-w <warning>] [-c <critical] [-p <poller_name>] [-c] [-v] [-V]
+[-w <warning>] [-c <critical] [-p <poller_name>] [-c] [-v] [-V] [-s -l <level> -f <facility>]
 
 Usage:
  -h, --help
@@ -107,6 +108,13 @@ Usage:
  -c, --check-mode
     Check mode.
     Usefull if you use the check with a Shinken command/service.
+ -s, --syslog
+    Print output into syslog. Facility and level must be specified to work
+    Note : Argument parsing errors are still printed to stdout
+ -l, --level=INTEGER
+    Level for syslog option
+ -f, --facility=INTEGER
+    Facility for syslog option
  -v, --verbose
     Verbose mode.
  -V, --version
@@ -132,7 +140,7 @@ def get_data(args):
         if perfdata:
             message = " | ".join((message, perfdata))
         if exit_code != STATE_OK or check:
-            print message
+            log_message(message, args)
         sys.exit(exit_code)
 
     ls_con = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -254,6 +262,13 @@ def get_data(args):
         exit(STATE_OK, message, perfdata)
 
 
+def log_message(msg, args):
+    if args['syslog']:
+        syslog.syslog(args['level'] | args['facility'], msg)
+    else:
+        print msg
+
+
 def check_arguments(args):
     """Check mandatory fields
     """
@@ -307,18 +322,26 @@ def check_arguments(args):
         print_support()
         sys.exit(STATE_UNKNOWN)
 
+    if 'syslog' not in args.keys():
+        args['syslog'] = False
+    elif 'facility' not in args.keys() or 'level' not in args.keys():
+        print "Facility and level must be specified when using syslog option"
+        print_usage()
+        print_support()
+        sys.exit(STATE_UNKNOWN)
+
 
 def main():
     """Main fonction
     """
     try:
         options, args = getopt.getopt(sys.argv[1:],
-                                      'B:P:H:S:w:c:p:hVvC',
+                                      'B:P:H:S:w:c:p:l:f:hVvCs',
                                       ['broker-address=', 'broker-port=',
                                        'check-mode', 'hostname=', 'help',
                                        'version', 'verbose', 'critical=',
                                        'warning=', 'servicename=',
-                                       'poller-name='])
+                                       'poller-name=', 'syslog', 'level=', 'facility='])
     except getopt.GetoptError, err:
         print str(err)
         print_usage()
@@ -345,6 +368,12 @@ def main():
             args['check'] = True
         elif option_name in ("-v", "--verbose"):
             args['verbose'] = True
+        elif option_name in ("-s", "--syslog"):
+            args['syslog'] = True
+        elif option_name in ("-l", "--level"):
+            args['level'] = value
+        elif option_name in ("-f", "--facility"):
+            args['facility'] = value
         elif option_name in ("-h", "--help"):
             print_version()
             print_usage()
