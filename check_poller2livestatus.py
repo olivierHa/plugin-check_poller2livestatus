@@ -81,7 +81,7 @@ def print_usage():
     """
     usage_msg = """
 %s.py -B <broker_address> [-P <broker_port>] -H <hostname> [-S <servicename>]
-[-w <warning>] [-c <critical] [-p <poller_name>] [-c] [-v] [-V] [-s -l <level> -f <facility>]
+[-w <warning>] [-c <critical] [-p <poller_name>] [-m] [-v] [-V] [-s -l <level> -f <facility>] [-C <chain>]
 
 Usage:
  -h, --help
@@ -105,9 +105,9 @@ Usage:
  -p, --poller-name
     Use only to show it in the output.
     Doesn't have any impact on the check.
- -c, --check-mode
+ -m, --check-mode
     Check mode.
-    Usefull if you use the check with a Shinken command/service.
+    Useful if you use the check with a Shinken command/service.
  -s, --syslog
     Print output into syslog. Facility and level must be specified to work
     Note : Argument parsing errors are still printed to stdout
@@ -119,6 +119,9 @@ Usage:
     Verbose mode.
  -V, --version
     Print version information.
+ -C, --chain=STRING
+    String used to know which daemons are actually checked in this the end-to-end check
+    Used in case of multi poller/broker in Shinken
 """ % PLUGIN_NAME
     print usage_msg
 
@@ -138,7 +141,7 @@ def get_data(args):
             message_prefix = "Shinken Poller2LiveStatus: "
         message = message_prefix + message
         if perfdata:
-            message = " | ".join((message, perfdata))
+            message = " for chain '%s' | ".join((message, perfdata)) % args['chain']
         if exit_code != STATE_OK or check:
             log_message(message, args)
         sys.exit(exit_code)
@@ -316,6 +319,9 @@ def check_arguments(args):
                 print_support()
                 sys.exit(STATE_UNKNOWN)
 
+    if 'chain' not in args.keys():
+        args['chain'] = None
+
     if args['warning'] > args['critical']:
         print "Warning threshold must be less than CRITICAL threshold"
         print_usage()
@@ -336,12 +342,12 @@ def main():
     """
     try:
         options, args = getopt.getopt(sys.argv[1:],
-                                      'B:P:H:S:w:c:p:l:f:hVvCs',
+                                      'B:P:H:S:w:c:p:l:f:C:hVvms',
                                       ['broker-address=', 'broker-port=',
                                        'check-mode', 'hostname=', 'help',
                                        'version', 'verbose', 'critical=',
                                        'warning=', 'servicename=',
-                                       'poller-name=', 'syslog', 'level=', 'facility='])
+                                       'poller-name=', 'syslog', 'level=', 'facility=', 'chain='])
     except getopt.GetoptError, err:
         print str(err)
         print_usage()
@@ -364,7 +370,7 @@ def main():
             args['critical'] = value
         elif option_name in ("-p", "--poller-name"):
             args['poller_name'] = value
-        elif option_name in ("-C", "--check-mode"):
+        elif option_name in ("-m", "--check-mode"):
             args['check'] = True
         elif option_name in ("-v", "--verbose"):
             args['verbose'] = True
@@ -374,6 +380,8 @@ def main():
             args['level'] = value
         elif option_name in ("-f", "--facility"):
             args['facility'] = value
+        elif option_name in ("-C", "--chain"):
+            args['chain'] = value
         elif option_name in ("-h", "--help"):
             print_version()
             print_usage()
