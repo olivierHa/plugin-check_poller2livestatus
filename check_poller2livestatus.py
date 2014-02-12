@@ -127,7 +127,6 @@ Usage:
 def get_data(args):
     """Fetch data
     """
-    verbose = args['verbose']
     mod_plugin = args['mod-plugin']
     poller = args['poller_name']
     chain = args['chain']
