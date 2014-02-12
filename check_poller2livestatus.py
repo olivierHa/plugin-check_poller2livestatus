@@ -81,7 +81,7 @@ def print_usage():
     """
     usage_msg = """
 %s.py -B <broker_address> [-P <broker_port>] -H <hostname> [-S <servicename>]
-[-w <warning>] [-c <critical] [-p <poller_name>] [-m] [-v] [-V] [-s -l <level> -f <facility>] [-C <chain>]
+[-w <warning>] [-c <critical] [-p <poller_name>] [-M] [-V] [-s -l <level> -f <facility>] [-C <chain>]
 
 Usage:
  -h, --help
@@ -105,8 +105,8 @@ Usage:
  -p, --poller-name
     Use only to show it in the output.
     Doesn't have any impact on the check.
- -m, --check-mode
-    Check mode.
+ -M, --mod-plugin
+    print output in stdout (or syslog) OK state. (monitoring-plugin behavior)
     Useful if you use the check with a Shinken command/service.
  -s, --syslog
     Print output into syslog. Facility and level must be specified to work
@@ -115,8 +115,6 @@ Usage:
     Level for syslog option
  -f, --facility=INTEGER
     Facility for syslog option
- -v, --verbose
-    Verbose mode.
  -V, --version
     Print version information.
  -C, --chain=STRING
@@ -130,20 +128,21 @@ def get_data(args):
     """Fetch data
     """
     verbose = args['verbose']
-    check = args['check']
+    mod_plugin = args['mod-plugin']
     poller = args['poller_name']
+    chain = args['chain']
 
     # Output function
     def exit(exit_code, message, perfdata=None):
         if poller:
-            message_prefix = "Shinken Poller2LiveStatus (Poller: %s): " % poller
+            message_prefix = "[%s]Shinken Poller2LiveStatus (Poller: %s): " % (chain, poller)
         else:
-            message_prefix = "Shinken Poller2LiveStatus: "
+            message_prefix = "[%s]Shinken Poller2LiveStatus: " % chain
         message = message_prefix + message
         if perfdata:
-            message = " for chain '%s' | ".join((message, perfdata)) % args['chain']
-        if exit_code != STATE_OK or check:
-            log_message(message, args)
+            message = " | ".join((message, perfdata))
+        if exit_code != STATE_OK or mod_plugin:
+            log_message(message, args['syslog'], args['level'], args['facility'])
         sys.exit(exit_code)
 
     ls_con = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -265,9 +264,9 @@ def get_data(args):
         exit(STATE_OK, message, perfdata)
 
 
-def log_message(msg, args):
-    if args['syslog']:
-        syslog.syslog(args['level'] | args['facility'], msg)
+def log_message(msg, syslog=False, level=None, facility=None):
+    if syslog:
+        syslog.syslog(level | facility, msg)
     else:
         print msg
 
@@ -298,14 +297,11 @@ def check_arguments(args):
     if not 'servicename' in args.keys():
         args['servicename'] = None
 
-    if not 'verbose' in args.keys():
-        args['verbose'] = False
+    if not 'mod-plugin' in args.keys():
+        args['mod-plugin'] = False
 
     if not 'poller_name' in args.keys():
         args['poller_name'] = False
-
-    if not 'check' in args.keys():
-        args['check'] = False
 
     for key in ['warning', 'critical']:
         if not key in args.keys():
@@ -342,10 +338,10 @@ def main():
     """
     try:
         options, args = getopt.getopt(sys.argv[1:],
-                                      'B:P:H:S:w:c:p:l:f:C:hVvms',
+                                      'B:P:H:S:w:c:p:l:f:C:hVMs',
                                       ['broker-address=', 'broker-port=',
-                                       'check-mode', 'hostname=', 'help',
-                                       'version', 'verbose', 'critical=',
+                                       'mod-plugin', 'hostname=', 'help',
+                                       'version', 'critical=',
                                        'warning=', 'servicename=',
                                        'poller-name=', 'syslog', 'level=', 'facility=', 'chain='])
     except getopt.GetoptError, err:
@@ -370,10 +366,8 @@ def main():
             args['critical'] = value
         elif option_name in ("-p", "--poller-name"):
             args['poller_name'] = value
-        elif option_name in ("-m", "--check-mode"):
-            args['check'] = True
-        elif option_name in ("-v", "--verbose"):
-            args['verbose'] = True
+        elif option_name in ("-M", "--mod-plugin"):
+            args['mod-plugin'] = True
         elif option_name in ("-s", "--syslog"):
             args['syslog'] = True
         elif option_name in ("-l", "--level"):
