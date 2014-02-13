@@ -120,6 +120,8 @@ Usage:
  -C, --chain=STRING
     String used to know which daemons are actually checked in this the end-to-end check
     Used in case of multi poller/broker in Shinken
+ -D, --debug
+    Enable debug
 """ % PLUGIN_NAME
     print usage_msg
 
@@ -127,6 +129,7 @@ Usage:
 def get_data(args):
     """Fetch data
     """
+    debug = args['debug']
     mod_plugin = args['mod-plugin']
     poller = args['poller_name']
     chain = args['chain']
@@ -160,7 +163,7 @@ def get_data(args):
     else:
         command = ('GET hosts\nColumns: host_name last_check check_interval'
                    '\nFilter: host_name = %s\n' % args['hostname'])
-    if verbose:
+    if debug:
         print "Livestatus query:", command
     # send command
     try:
@@ -175,7 +178,7 @@ def get_data(args):
         message = "Error while reading livestatus query"
         exit(STATE_CRITICAL, message)
     # Parse response
-    if verbose:
+    if debug:
         print "Livestatus output:", output
     output = output.strip()
     if output == "":
@@ -218,7 +221,7 @@ def get_data(args):
     data['delta'] = now - last_check
     data['poller_name'] = args['poller_name']
     perfdata = ""
-    if check:
+    if mod_plugin:
         perfdata = "delta=%(delta)ds;%(warning)d;%(critical)d;;" % data
     if now - data['critical'] > last_check:
         message = " # ".join(("CRITICAL",
@@ -230,7 +233,7 @@ def get_data(args):
         if data['poller_name']:
                 message = message + " # Poller:%(poller_name)s"
         message = message % data
-        if verbose:
+        if debug:
             print message
         exit(STATE_CRITICAL, message, perfdata)
 
@@ -244,7 +247,7 @@ def get_data(args):
         if data['poller_name']:
                 message = message + " # Poller:%(poller_name)s"
         message = message % data
-        if verbose:
+        if debug:
             print message
         exit(STATE_WARNING, message, perfdata)
 
@@ -258,13 +261,13 @@ def get_data(args):
         if data['poller_name']:
                 message = message + " # Poller:%(poller_name)s"
         message = message % data
-        if verbose:
+        if debug:
             print message
         exit(STATE_OK, message, perfdata)
 
 
-def log_message(msg, syslog=False, level=None, facility=None):
-    if syslog:
+def log_message(msg, is_syslog=False, level=None, facility=None):
+    if is_syslog:
         syslog.syslog(level | facility, msg)
     else:
         print msg
@@ -299,6 +302,9 @@ def check_arguments(args):
     if not 'mod-plugin' in args.keys():
         args['mod-plugin'] = False
 
+    if not 'debug' in args.keys():
+        args['debug'] = False
+
     if not 'poller_name' in args.keys():
         args['poller_name'] = False
 
@@ -325,6 +331,8 @@ def check_arguments(args):
 
     if 'syslog' not in args.keys():
         args['syslog'] = False
+        args['level'] = None
+        args['facility'] = None
     elif 'facility' not in args.keys() or 'level' not in args.keys():
         print "Facility and level must be specified when using syslog option"
         print_usage()
@@ -370,11 +378,13 @@ def main():
         elif option_name in ("-s", "--syslog"):
             args['syslog'] = True
         elif option_name in ("-l", "--level"):
-            args['level'] = value
+            args['level'] = int(value)
         elif option_name in ("-f", "--facility"):
-            args['facility'] = value
+            args['facility'] = int(value)
         elif option_name in ("-C", "--chain"):
             args['chain'] = value
+        elif option_name in ("-D", "--debug"):
+            args['debug'] = True
         elif option_name in ("-h", "--help"):
             print_version()
             print_usage()
