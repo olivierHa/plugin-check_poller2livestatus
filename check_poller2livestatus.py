@@ -137,9 +137,9 @@ def get_data(args):
     # Output function
     def exit(exit_code, message, perfdata=None):
         if poller:
-            message_prefix = "[%s]Shinken Poller2LiveStatus (Poller: %s): " % (chain, poller)
+            message_prefix = "[%s]Shinken Poller2LiveStatus (Poller: %s) - " % (chain, poller)
         else:
-            message_prefix = "[%s]Shinken Poller2LiveStatus: " % chain
+            message_prefix = "[%s]Shinken Poller2LiveStatus - " % chain
         message = message_prefix + message
         if perfdata:
             message = " | ".join((message, perfdata))
@@ -152,8 +152,8 @@ def get_data(args):
     try:
         ls_con.connect((args['broker-address'], args['broker-port']))
     except:
-        message = "Error while connecting to livestatus"
-        exit(STATE_WARNING, message)
+        message = "CRITICAL : Error while connecting to livestatus"
+        exit(STATE_CRITICAL, message)
 
     if args['servicename']:
         command = ('GET services\nColumns: host_name description last_check '
@@ -169,21 +169,21 @@ def get_data(args):
     try:
         ls_con.send(command + 'Limit: 1\n\n')
     except:
-        message = "Error while sending livestatus query"
-        exit(STATE_WARNING, message)
+        message = "CRITICAL : Error while sending livestatus query"
+        exit(STATE_CRITICAL, message)
     # Receive response
     try:
         output = ls_con.recv(1024)
     except:
-        message = "Error while reading livestatus query"
+        message = "CRITICAL : Error while reading livestatus query"
         exit(STATE_CRITICAL, message)
     # Parse response
     if debug:
         print "Livestatus output:", output
     output = output.strip()
     if output == "":
-        message = "Host or service not found, check your plugin configuration"
-        exit(STATE_CRITICAL, message)
+        message = "UNKNOWN : Host or service not found, check your plugin configuration"
+        exit(STATE_UNKNOWN, message)
     try:
         (hostname,
          last_check,
@@ -191,16 +191,16 @@ def get_data(args):
         last_check = int(last_check)
         check_interval = int(check_interval) * 60
     except:
-        message = "Bad response from the broker: `%s' " % output
+        message = "CRITICAL : Bad response from the broker: `%s' " % output
         exit(STATE_CRITICAL, message)
 
     if args['servicename']:
         hostname, service = hostname.split(";")
         if service != args['servicename']:
-            message = "Bad response from the broker: `%s' " % output
+            message = "CRITICAL : Bad response from the broker: `%s' " % output
             exit(STATE_CRITICAL, message)
     if hostname != args['hostname']:
-        message = "Bad response from the broker: `%s' " % output
+        message = "CRITICAL : Bad response from the broker: `%s' " % output
         exit(STATE_CRITICAL, message)
 
     # Processing
