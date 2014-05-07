@@ -40,7 +40,7 @@ echo OLD REQS HASH AND NEW REQS HASH: $OLDHASH $HASH
 
 
 # Cache the environment if it hasn't changed.
-if [ "$OLDHASH" != "$HASH" ]; then
+if [ "$OLDHASH" != "$HASH" ] || [ ! -d last_env ]; then
   echo "ENVIRONMENT SPECS CHANGED - CREATING A NEW ENVIRONMENT"
   virtualenv --distribute env
   . env/bin/activate
