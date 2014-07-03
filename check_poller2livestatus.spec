@@ -13,8 +13,8 @@ Release:    %{release}.%{dist}
 License: GPL v3
 Summary: Shinken plugin from SFL. Check Shinken from poller to livestatus module
 Group: Networking/Other
-Source: http://monitoring.savoirfairelinux.com/%{name}.tar.gz
-URL: http://monitoring.savoirfairelinux.com/
+Source: https://github.com/savoirfairelinux/plugin-%{raw_name}/archive/master.tar.gz
+URL: https://github.com/savoirfairelinux/sfl-shinken-plugins
 Distribution: Savoir-faire Linux
 Vendor: Savoir-faire Linux
 Packager: Thibault Cohen <thibault.cohen@savoirfairelinux.com>
