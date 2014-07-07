@@ -94,7 +94,7 @@ class TestPlugin(unittest.TestCase):
         """
         # First launch the netcat "web server"
         now = int(time.time())
-        os.system("nc -l -p 50001 -c 'echo myhost\;myservice\;%d\;5' &" % now)
+        os.system("nc.traditional -l -p 50001 -c 'echo myhost\;myservice\;%d\;5' &" % now)
 
         time.sleep(1)
         sys.argv = [sys.argv[0]]
@@ -114,7 +114,7 @@ class TestPlugin(unittest.TestCase):
         """
         # First launch the netcat "web server"
         now = int(time.time())
-        os.system("nc -l -p 50001 -c 'echo myhost\;myservice\;%d\;5' &" % now)
+        os.system("nc.traditional -l -p 50001 -c 'echo myhost\;myservice\;%d\;5' &" % now)
 
         time.sleep(1)
         sys.argv = [sys.argv[0]]
@@ -136,7 +136,7 @@ class TestPlugin(unittest.TestCase):
         """
         # First launch the netcat "web server"
         now = int(time.time())
-        os.system("nc -l -p 50001 -c 'echo myhost\;myservice\;%d\;5' &" % now)
+        os.system("nc.traditional -l -p 50001 -c 'echo myhost\;myservice\;%d\;5' &" % now)
 
         time.sleep(1)
         sys.argv = [sys.argv[0]]
@@ -160,7 +160,7 @@ class TestPlugin(unittest.TestCase):
         """
         # First launch the netcat "web server"
         now = int(time.time()) - 65
-        os.system("nc -l -p 50000 -c 'echo myhost\;myservice\;%d\;5' &" % now)
+        os.system("nc.traditional -l -p 50000 -c 'echo myhost\;myservice\;%d\;5' &" % now)
 
         time.sleep(1)
         sys.argv = [sys.argv[0]]
@@ -185,7 +185,7 @@ class TestPlugin(unittest.TestCase):
         """
         # First launch the netcat "web server"
         now = int(time.time()) - 155
-        os.system("nc -l -p 50000 -c 'echo myhost\;%d\;5' &" % now)
+        os.system("nc.traditional -l -p 50000 -c 'echo myhost\;%d\;5' &" % now)
 
         time.sleep(1)
         sys.argv = [sys.argv[0]]
