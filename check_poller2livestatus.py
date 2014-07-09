@@ -345,12 +345,13 @@ def main():
     """
     try:
         options, args = getopt.getopt(sys.argv[1:],
-                                      'B:P:H:S:w:c:p:l:f:C:hVMs',
+                                      'B:P:H:S:w:c:p:l:f:C:hVMsD',
                                       ['broker-address=', 'broker-port=',
                                        'mod-plugin', 'hostname=', 'help',
                                        'version', 'critical=',
                                        'warning=', 'servicename=',
-                                       'poller-name=', 'syslog', 'level=', 'facility=', 'chain='])
+                                       'poller-name=', 'syslog', 'level=', 
+                                       'facility=', 'chain=', 'debug'])
     except getopt.GetoptError, err:
         print str(err)
         print_usage()
