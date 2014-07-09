@@ -55,6 +55,7 @@ class NetEcho(threading.Thread):
     def _create_server_socket(self):
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind((self.host, self.port))
         except Exception as e:
             print 'Bind failed: could not acquire port', self.port
