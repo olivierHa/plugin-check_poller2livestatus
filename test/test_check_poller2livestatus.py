@@ -53,8 +53,8 @@ class NetEcho(threading.Thread):
         self.server_socket = self._create_server_socket()
 
     def _create_server_socket(self):
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.bind((self.host, self.port))
         except Exception as e:
             print 'Bind failed: could not acquire port', self.port
@@ -75,6 +75,9 @@ class TestPlugin(unittest.TestCase):
     def setUp(self):
         pass
 
+    def tearDown(self):
+        pass
+
     def do_tst(self, return_val, pattern_to_search):
         try:
             out = StringIO()
@@ -82,7 +85,6 @@ class TestPlugin(unittest.TestCase):
             check_poller2livestatus.main()
         except SystemExit, e:
             output = out.getvalue().strip()
-            # raise Exception(output)
             self.assertEquals(type(e), type(SystemExit()))
             self.assertEquals(e.code, return_val)
             matches = re.search(pattern_to_search, output)
@@ -116,98 +118,6 @@ class TestPlugin(unittest.TestCase):
         sys.argv.append('-p')
         sys.argv.append('mypoller')
         self.do_tst(2, "Error while connecting to livestatus")
-
-    def test_connection_ok(self):
-        """Test connection ok :
-        -B localhost -P 50001 -H myhost -S myservice -p mypoller
-        """
-        now = int(time.time())
-        nc = NetEcho(host='localhost', port=50001, echo='myhost;myservice;%d;5' % now)
-        nc.start()
-
-        sys.argv = [sys.argv[0]]
-        sys.argv.append('-B')
-        sys.argv.append('localhost')
-        sys.argv.append('-P')
-        sys.argv.append('50001')
-        sys.argv.append('-H')
-        sys.argv.append('myhost')
-        sys.argv.append('-S')
-        sys.argv.append('myservice')
-        sys.argv.append('-p')
-        sys.argv.append('mypoller')
-        self.do_tst(0, "")
-        nc.join()
-
-    def test_connection_ok_check(self):
-        """Test connection ok check :
-        -B 127.0.0.1 -P 50001 -H myhost -S myservice -p mypoller -C mybroker
-        """
-        now = int(time.time())
-        nc = NetEcho(host='localhost', port=50001, echo='myhost;myservice;%d;5' % now)
-        nc.start()
-
-        sys.argv = [sys.argv[0]]
-        sys.argv.append('-B')
-        sys.argv.append('127.0.0.1')
-        sys.argv.append('-P')
-        sys.argv.append('50001')
-        sys.argv.append('-H')
-        sys.argv.append('myhost')
-        sys.argv.append('-S')
-        sys.argv.append('myservice')
-        sys.argv.append('-p')
-        sys.argv.append('mypoller')
-        sys.argv.append('-C')
-        sys.argv.append('mybroker')
-        self.do_tst(0, "| delta=")
-        nc.join()
-
-    def test_connection_warning(self):
-        """Test connection warning
-        -B 127.0.0.1 -H myhost -S myservice -p mypoller -w 60 -c 120
-        """
-        now = int(time.time()) - 65
-        nc = NetEcho(host='localhost', port=50000, echo='myhost;myservice;%d;5' % now)
-        nc.start()
-
-        sys.argv = [sys.argv[0]]
-        sys.argv.append('-B')
-        sys.argv.append('localhost')
-        sys.argv.append('-H')
-        sys.argv.append('myhost')
-        sys.argv.append('-S')
-        sys.argv.append('myservice')
-        sys.argv.append('-p')
-        sys.argv.append('mypoller')
-        sys.argv.append('-w')
-        sys.argv.append('60')
-        sys.argv.append('-c')
-        sys.argv.append('120')
-        self.do_tst(1, "# delta:6[0-9]")
-        nc.join()
-
-    def test_connection_critical(self):
-        """Test connection critical
-        -B 127.0.0.1 -H myhost -p mypoller -w 60 -c 120
-        """
-        now = int(time.time()) - 155
-        nc = NetEcho(host='localhost', port=50000, echo='myhost;%d;5' % now)
-        nc.start()
-
-        sys.argv = [sys.argv[0]]
-        sys.argv.append('-B')
-        sys.argv.append('localhost')
-        sys.argv.append('-H')
-        sys.argv.append('myhost')
-        sys.argv.append('-p')
-        sys.argv.append('mypoller')
-        sys.argv.append('-w')
-        sys.argv.append('60')
-        sys.argv.append('-c')
-        sys.argv.append('120')
-        self.do_tst(2, "# delta:15[0-9]")
-        nc.join()
 
     def test_bad_arguments_1(self):
         """Test Bad arguments 1 :
@@ -270,6 +180,114 @@ class TestPlugin(unittest.TestCase):
         sys.argv.append('-c')
         sys.argv.append('bad_critical')
         self.do_tst(3, "Argument `critical': Bad format !")
+
+class TestPluginWithSocket(unittest.TestCase):
+    def setUp(self):
+        self.nc = NetEcho(host='localhost', port=50001)
+        self.nc.start()
+
+    def tearDown(self):
+        self.nc.join()
+
+    def do_tst(self, return_val, pattern_to_search):
+        try:
+            out = StringIO()
+            sys.stdout = out
+            check_poller2livestatus.main()
+        except SystemExit, e:
+            output = out.getvalue().strip()
+            self.assertEquals(type(e), type(SystemExit()))
+            self.assertEquals(e.code, return_val)
+            matches = re.search(pattern_to_search, output)
+            assert matches is not None
+
+    def test_connection_ok(self):
+        """Test connection ok :
+        -B localhost -P 50001 -H myhost -S myservice -p mypoller
+        """
+        now = int(time.time())
+        self.nc.echo = 'myhost;myservice;%d;5' % now
+
+        sys.argv = [sys.argv[0]]
+        sys.argv.append('-B')
+        sys.argv.append('localhost')
+        sys.argv.append('-P')
+        sys.argv.append('50001')
+        sys.argv.append('-H')
+        sys.argv.append('myhost')
+        sys.argv.append('-S')
+        sys.argv.append('myservice')
+        sys.argv.append('-p')
+        sys.argv.append('mypoller')
+        self.do_tst(0, "")
+
+    def test_connection_ok_check(self):
+        """Test connection ok check :
+        -B 127.0.0.1 -P 50001 -H myhost -S myservice -p mypoller -C mybroker
+        """
+        now = int(time.time())
+        self.nc.echo = 'myhost;myservice;%d;5' % now
+
+        sys.argv = [sys.argv[0]]
+        sys.argv.append('-B')
+        sys.argv.append('127.0.0.1')
+        sys.argv.append('-P')
+        sys.argv.append('50001')
+        sys.argv.append('-H')
+        sys.argv.append('myhost')
+        sys.argv.append('-S')
+        sys.argv.append('myservice')
+        sys.argv.append('-p')
+        sys.argv.append('mypoller')
+        sys.argv.append('-C')
+        sys.argv.append('mybroker')
+        self.do_tst(0, "| delta=")
+
+    def test_connection_warning(self):
+        """Test connection warning
+        -B 127.0.0.1 -H myhost -S myservice -p mypoller -w 60 -c 120
+        """
+        now = int(time.time()) - 65
+        self.nc.echo = 'myhost;myservice;%d;5' % now
+
+        sys.argv = [sys.argv[0]]
+        sys.argv.append('-B')
+        sys.argv.append('localhost')
+        sys.argv.append('-P')
+        sys.argv.append('50001')
+        sys.argv.append('-H')
+        sys.argv.append('myhost')
+        sys.argv.append('-S')
+        sys.argv.append('myservice')
+        sys.argv.append('-p')
+        sys.argv.append('mypoller')
+        sys.argv.append('-w')
+        sys.argv.append('60')
+        sys.argv.append('-c')
+        sys.argv.append('120')
+        self.do_tst(1, "# delta:6[0-9]")
+
+    def test_connection_critical(self):
+        """Test connection critical
+        -B 127.0.0.1 -H myhost -p mypoller -w 60 -c 120
+        """
+        now = int(time.time()) - 155
+        self.nc.echo = 'myhost;%d;5' % now
+
+        sys.argv = [sys.argv[0]]
+        sys.argv.append('-B')
+        sys.argv.append('localhost')
+        sys.argv.append('-P')
+        sys.argv.append('50001')
+        sys.argv.append('-H')
+        sys.argv.append('myhost')
+        sys.argv.append('-p')
+        sys.argv.append('mypoller')
+        sys.argv.append('-w')
+        sys.argv.append('60')
+        sys.argv.append('-c')
+        sys.argv.append('120')
+        self.do_tst(2, "# delta:15[0-9]")
 
 if __name__ == '__main__':
     unittest.main()
