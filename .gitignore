@@ -13,7 +13,6 @@ last_env
 snmpsim.egg-info/
 pep8.txt
 debian/files
-debian/*/
 debian/*.debhelper.log
 debian/*.substvars
 test/devices/*.dbm
