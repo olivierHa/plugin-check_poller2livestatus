@@ -20,10 +20,10 @@
 #     along with this program; if not, write to the Free Software
 #     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-#     Projects :
+#     Projects :
 #               SFL Shinken plugins
 #
-#     File :
+#     File :
 #               check_poller2livestatus.py Check Shinken from poller
 #               to livestatus module
 #
@@ -120,6 +120,8 @@ Usage:
  -C, --chain=STRING
     String used to know which daemons are actually checked in this the end-to-end check
     Used in case of multi poller/broker in Shinken
+ -I, --interval-length=INTEGER
+    Shinken global interval-length
  -D, --debug
     Enable debug
 """ % PLUGIN_NAME
@@ -133,6 +135,7 @@ def get_data(args):
     mod_plugin = args['mod-plugin']
     poller = args['poller_name']
     chain = args['chain']
+    interval_length = args['interval-length']
 
     # Output function
     def exit(exit_code, message, perfdata=None):
@@ -189,7 +192,7 @@ def get_data(args):
          last_check,
          check_interval) = [x.strip() for x in output.rsplit(";", 2)]
         last_check = int(last_check)
-        check_interval = int(check_interval) * 60
+        check_interval = int(check_interval) * interval_length
     except:
         message = "CRITICAL : Bad response from the broker: `%s' " % output
         exit(STATE_CRITICAL, message)
@@ -205,7 +208,6 @@ def get_data(args):
 
     # Processing
     now = int(time.time())
-    #check_interval = 5
     data = {}
     if args['warning'] is None:
         data['warning'] = int(check_interval + 60)
@@ -323,6 +325,17 @@ def check_arguments(args):
     if 'chain' not in args.keys():
         args['chain'] = None
 
+    if 'interval-length' not in args.keys():
+        args['interval-length'] = 60
+    else:
+        try:
+            args['interval-length'] = int(args['interval-length'])
+        except:
+            print "Argument `interval-length': Bad format !"
+            print_usage()
+            print_support()
+            sys.exit(STATE_UNKNOWN)
+
     if args['warning'] > args['critical']:
         print "Warning threshold must be less than CRITICAL threshold"
         print_usage()
@@ -345,13 +358,13 @@ def main():
     """
     try:
         options, args = getopt.getopt(sys.argv[1:],
-                                      'B:P:H:S:w:c:p:l:f:C:hVMsD',
-                                      ['broker-address=', 'broker-port=',
-                                       'mod-plugin', 'hostname=', 'help',
-                                       'version', 'critical=',
-                                       'warning=', 'servicename=',
-                                       'poller-name=', 'syslog', 'level=', 
-                                       'facility=', 'chain=', 'debug'])
+                'B:I:P:H:S:w:c:p:l:f:C:hVMsD',
+                ['broker-address=', 'broker-port=',
+                'mod-plugin', 'hostname=', 'help',
+                'version', 'critical=',
+                'warning=', 'servicename=',
+                'poller-name=', 'syslog', 'level=',
+                'facility=', 'chain=', 'interval-length=', 'debug'])
     except getopt.GetoptError, err:
         print str(err)
         print_usage()
@@ -386,6 +399,8 @@ def main():
             args['chain'] = value
         elif option_name in ("-D", "--debug"):
             args['debug'] = True
+        elif option_name in ("-I", "--interval-length"):
+            args['interval-length'] = value
         elif option_name in ("-h", "--help"):
             print_version()
             print_usage()
